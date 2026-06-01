@@ -1,9 +1,16 @@
 import OpenAI from 'openai';
 import { GradeResult, GradeLabel } from '@/types';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return _openai;
+}
 
 const GRADING_SYSTEM_PROMPT = `You are an expert LinkedIn content strategist who has analysed over 50,000 LinkedIn posts. You grade LinkedIn posts with ruthless honesty and specific, actionable feedback. You know exactly what makes posts go viral vs what gets ignored.
 
@@ -126,7 +133,7 @@ export async function gradePost(postContent: string): Promise<GradeResult> {
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: GRADING_SYSTEM_PROMPT },
@@ -145,7 +152,6 @@ export async function gradePost(postContent: string): Promise<GradeResult> {
       try {
         parsed = JSON.parse(content);
       } catch {
-        // Try to extract JSON from markdown code blocks
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
         if (jsonMatch) {
           parsed = JSON.parse(jsonMatch[1]);
@@ -158,7 +164,6 @@ export async function gradePost(postContent: string): Promise<GradeResult> {
         throw new Error('Invalid grade result structure from OpenAI');
       }
 
-      // Recalculate overall score to ensure consistency
       const overall_score = calculateOverallScore(parsed);
       const grade_label = getGradeLabel(overall_score);
 

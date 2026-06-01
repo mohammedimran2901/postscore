@@ -1,9 +1,16 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+
+function getResend(): Resend {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
 
 export async function sendWelcomeEmail(email: string, name: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: 'PostScore <hello@postscore.ai>',
     to: email,
     subject: 'Welcome to PostScore — here are your 3 free grades',
@@ -39,7 +46,7 @@ export async function sendUpgradeConfirmationEmail(email: string, name: string) 
   trialEndDate.setDate(trialEndDate.getDate() + 7);
   const trialEndStr = trialEndDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: 'PostScore <hello@postscore.ai>',
     to: email,
     subject: "You're now on PostScore Pro — unlimited grades unlocked",

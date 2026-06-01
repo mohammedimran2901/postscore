@@ -1,9 +1,16 @@
 import OpenAI from 'openai';
 import { RewriteResult } from '@/types';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return _openai;
+}
 
 const REWRITE_SYSTEM_PROMPT = `You are an expert LinkedIn ghostwriter who has written viral posts for founders, executives and creators. You rewrite underperforming LinkedIn posts to maximise engagement while keeping the author's original message and voice.
 
@@ -55,7 +62,7 @@ export async function rewritePost(postContent: string): Promise<RewriteResult> {
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: REWRITE_SYSTEM_PROMPT },
