@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PostScore — AI LinkedIn Post Grader
 
-## Getting Started
+PostScore is a full-stack SaaS application that uses AI to grade LinkedIn posts across 6 performance dimensions and provides actionable feedback to improve engagement.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **AI Grading Engine**: GPT-4o-mini grades posts across 6 dimensions (Hook, Readability, Scroll-Stop, Engagement, Format, CTA)
+- **Free Plan**: 3 free grades per month, no credit card required
+- **Pro Plan**: Unlimited grades, AI post rewrites, score trend charts, 7-day free trial
+- **Stripe Integration**: Complete subscription billing with webhook handling
+- **Dark UI**: Premium dark theme with indigo accent colors
+- **Landing Page**: Full marketing site with demo grader, testimonials, FAQ, pricing
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 16 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (Auth + Database)
+- OpenAI GPT-4o-mini
+- Stripe (Subscriptions)
+- Resend (Email)
+- Recharts (Charts)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+1. **Clone and install dependencies**
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+   Fill in all required values:
+   - Supabase URL and keys
+   - OpenAI API key
+   - Stripe keys
+   - Resend API key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Set up Supabase Database**
+   Create the following tables:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   **profiles**
+   ```sql
+   create table profiles (
+     id uuid references auth.users on delete cascade primary key,
+     email text not null,
+     full_name text,
+     avatar_url text,
+     stripe_customer_id text,
+     subscription_status text default 'free',
+     subscription_id text,
+     grades_used_this_month integer default 0,
+     grades_reset_at timestamptz default now(),
+     created_at timestamptz default now(),
+     updated_at timestamptz default now()
+   );
+   ```
 
-## Deploy on Vercel
+   **post_grades**
+   ```sql
+   create table post_grades (
+     id uuid default gen_random_uuid() primary key,
+     user_id uuid references profiles(id) on delete cascade,
+     post_content text not null,
+     overall_score integer not null,
+     grade_label text not null,
+     hook_score integer not null,
+     readability_score integer not null,
+     scroll_stop_score integer not null,
+     engagement_score integer not null,
+     format_score integer not null,
+     cta_score integer not null,
+     hook_feedback text not null,
+     readability_feedback text not null,
+     scroll_stop_feedback text not null,
+     engagement_feedback text not null,
+     format_feedback text not null,
+     cta_feedback text not null,
+     overall_summary text not null,
+     top_strength text not null,
+     top_weakness text not null,
+     rewrite_suggestion text,
+     rewrite_hook text,
+     rewrite_body text,
+     rewrite_cta text,
+     created_at timestamptz default now()
+   );
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Run locally**
+   ```bash
+   npm run dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Deploy to Vercel**
+   ```bash
+   vercel
+   ```
+
+## API Routes
+
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/grade` | POST | Yes | Grade a LinkedIn post |
+| `/api/grade/demo` | POST | No | Public demo grade (rate limited) |
+| `/api/rewrite` | POST | Yes (Pro) | AI rewrite a graded post |
+| `/api/stripe/checkout` | POST | Yes | Create Stripe checkout session |
+| `/api/stripe/webhook` | POST | No | Stripe webhook handler |
+
+## License
+
+MIT
