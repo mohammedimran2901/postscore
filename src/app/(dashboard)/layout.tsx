@@ -15,24 +15,28 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setUser(data.user);
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", data.user.id)
-          .single();
-        setProfile(profileData);
+      if (!data.user) {
+        router.replace("/login");
+        return;
       }
+      setUser(data.user);
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+      setProfile(profileData);
+      setCheckingAuth(false);
     };
     fetchUser();
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
