@@ -25,6 +25,14 @@ export default function LoginPage() {
     });
   }, [router]);
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#6366f1] animate-spin" />
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
