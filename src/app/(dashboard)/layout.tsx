@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Zap, History, Settings, LogOut, Menu, X } from "lucide-react";
+import { Zap, History, Settings, LogOut, Menu, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import CheckoutButton from "@/components/checkout-button";
 
 export default function DashboardLayout({
   children,
@@ -49,6 +50,14 @@ export default function DashboardLayout({
     { href: "/dashboard", label: "My Grades", icon: History },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#6366f1] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex">
@@ -116,12 +125,9 @@ export default function DashboardLayout({
                       }}
                     />
                   </div>
-                  <Link
-                    href="/api/stripe/checkout"
-                    className="text-sm text-[#6366f1] hover:underline"
-                  >
+                  <CheckoutButton className="text-sm text-[#6366f1] hover:underline text-left">
                     Upgrade to Pro →
-                  </Link>
+                  </CheckoutButton>
                 </div>
               )}
             </div>

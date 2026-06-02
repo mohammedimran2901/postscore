@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
+import CheckoutButton from "@/components/checkout-button";
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -153,12 +154,9 @@ export default function SettingsPage() {
               3 free grades per month. Upgrade to Pro for unlimited grades and
               AI rewrites.
             </p>
-            <a
-              href="/api/stripe/checkout"
-              className="inline-block px-6 py-3 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#5558e0] transition-colors"
-            >
+            <CheckoutButton className="inline-block px-6 py-3 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#5558e0] transition-colors">
               Upgrade to Pro →
-            </a>
+            </CheckoutButton>
           </div>
         )}
       </div>

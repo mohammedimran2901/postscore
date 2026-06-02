@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { PostGrade } from "@/types";
 import { Rocket, Trash2, Loader2 } from "lucide-react";
+import CheckoutButton from "@/components/checkout-button";
 import {
   LineChart,
   Line,
@@ -180,12 +181,9 @@ export default function DashboardPage() {
               <p className="text-zinc-400 text-sm text-center max-w-xs mb-4">
                 Upgrade to Pro to track your score trends over time
               </p>
-              <Link
-                href="/api/stripe/checkout"
-                className="px-4 py-2 bg-[#6366f1] text-white rounded-lg text-sm hover:bg-[#5558e0] transition-colors"
-              >
+              <CheckoutButton className="px-4 py-2 bg-[#6366f1] text-white rounded-lg text-sm hover:bg-[#5558e0] transition-colors">
                 Upgrade to Pro
-              </Link>
+              </CheckoutButton>
             </div>
           </div>
         ) : (

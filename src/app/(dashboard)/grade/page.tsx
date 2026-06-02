@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { GradeResult, PostGrade } from "@/types";
 import Link from "next/link";
 import { Copy, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import CheckoutButton from "@/components/checkout-button";
 import { cn } from "@/lib/utils";
 
 function getScoreColor(score: number) {
@@ -117,12 +118,9 @@ export default function GradePage() {
             You've used your 3 free grades this month. Upgrade to Pro for
             unlimited grades.
           </p>
-          <Link
-            href="/api/stripe/checkout"
-            className="inline-block px-6 py-3 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#5558e0] transition-colors"
-          >
+          <CheckoutButton className="px-6 py-3 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#5558e0] transition-colors">
             Upgrade Now →
-          </Link>
+          </CheckoutButton>
         </div>
       ) : (
         <>
@@ -263,12 +261,9 @@ export default function GradePage() {
                     See how your post looks when rewritten by AI with a stronger
                     hook and better CTA.
                   </p>
-                  <Link
-                    href="/api/stripe/checkout"
-                    className="px-6 py-2 bg-[#6366f1] text-white rounded-lg font-medium hover:bg-[#5558e0] transition-colors"
-                  >
+                  <CheckoutButton className="px-6 py-2 bg-[#6366f1] text-white rounded-lg font-medium hover:bg-[#5558e0] transition-colors">
                     Unlock with Pro — 7 Day Free Trial →
-                  </Link>
+                  </CheckoutButton>
                 </div>
               </div>
             ) : (
