@@ -1,16 +1,9 @@
-import OpenAI from 'openai';
 import { GradeResult, GradeLabel } from '@/types';
 
-let _openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!_openai) {
-    _openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-  }
-  return _openai;
-}
+// DeepSeek API configuration - 50%+ cheaper than OpenAI GPT-4o-mini
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
+const DEEPSEEK_MODEL = 'deepseek-chat'; // or 'deepseek-reasoner' for complex reasoning
 
 const GRADING_SYSTEM_PROMPT = `You are an expert LinkedIn content strategist who has analysed over 50,000 LinkedIn posts. You grade LinkedIn posts with ruthless honesty and specific, actionable feedback. You know exactly what makes posts go viral vs what gets ignored.
 
@@ -127,41 +120,61 @@ function validateGradeResult(result: Partial<GradeResult>): result is GradeResul
   return true;
 }
 
+async function callDeepSeek(postContent: string): Promise<string> {
+  const response = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: [
+        { role: 'system', content: GRADING_SYSTEM_PROMPT },
+        { role: 'user', content: postContent },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+      response_format: { type: 'json_object' },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`DeepSeek API error: ${response.status} ${error}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0]?.message?.content;
+}
+
 export async function gradePost(postContent: string): Promise<GradeResult> {
   const maxRetries = 2;
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await getOpenAI().chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: GRADING_SYSTEM_PROMPT },
-          { role: 'user', content: postContent },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      });
+      const content = await callDeepSeek(postContent);
 
-      const content = response.choices[0]?.message?.content;
       if (!content) {
-        throw new Error('Empty response from OpenAI');
+        throw new Error('Empty response from DeepSeek');
       }
 
       let parsed: Partial<GradeResult>;
       try {
         parsed = JSON.parse(content);
       } catch {
+        // Try to extract JSON from markdown code blocks
         const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
         if (jsonMatch) {
           parsed = JSON.parse(jsonMatch[1]);
         } else {
-          throw new Error('Invalid JSON response from OpenAI');
+          throw new Error('Invalid JSON response from DeepSeek');
         }
       }
 
       if (!validateGradeResult(parsed)) {
-        throw new Error('Invalid grade result structure from OpenAI');
+        throw new Error('Invalid grade result structure from DeepSeek');
       }
 
       const overall_score = calculateOverallScore(parsed);
