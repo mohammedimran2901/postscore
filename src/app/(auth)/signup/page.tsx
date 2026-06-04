@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, CheckCircle } from "lucide-react";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,12 +40,12 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
@@ -54,8 +55,17 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/dashboard?welcome=true");
-    router.refresh();
+    // Check if email confirmation is required
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      // Email already exists
+      setError("An account with this email already exists. Please sign in.");
+      setLoading(false);
+      return;
+    }
+
+    // Show success - email verification sent
+    setSuccess(true);
+    setLoading(false);
   };
 
   const handleGoogleSignUp = async () => {
@@ -66,6 +76,43 @@ export default function SignupPage() {
       },
     });
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Mail className="w-8 h-8 text-green-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">Check your email</h1>
+          <p className="text-zinc-400 mb-2">
+            We've sent a verification link to:
+          </p>
+          <p className="text-white font-medium mb-6">{email}</p>
+          <p className="text-zinc-500 text-sm mb-8">
+            Click the link in the email to verify your account and start grading posts.
+          </p>
+          <div className="space-y-3">
+            <p className="text-zinc-600 text-sm">
+              Didn't receive it? Check your spam folder or{" "}
+              <button
+                onClick={() => setSuccess(false)}
+                className="text-[#6366f1] hover:underline"
+              >
+                try again
+              </button>
+            </p>
+            <Link
+              href="/login"
+              className="inline-block text-zinc-400 hover:text-white text-sm"
+            >
+              Already verified? Sign in →
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
