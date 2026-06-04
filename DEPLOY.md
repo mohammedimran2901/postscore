@@ -1,18 +1,22 @@
-# PostScore - Launch Checklist
+# PostScore - Launch Guide (Go Live in 30 Minutes)
 
-## Quick Start (Go Live in 30 minutes)
+## Step 1: Supabase (Database) - 10 minutes
 
-### 1. Supabase Setup (10 mins)
-1. Go to https://supabase.com and create a new project
-2. Once created, go to SQL Editor
-3. Run this SQL:
+**1.1 Create Project**
+- Go to https://supabase.com
+- Click **"New Project"**
+- Choose organization → Name it `postscore`
+- Set password (save this!)
+- Click **"Create new project"**
+
+**1.2 Create Tables**
+- Wait for project to be ready (1-2 mins)
+- Click **"SQL Editor"** in left sidebar
+- Click **"New query"**
+- Paste this SQL:
 
 ```sql
--- Enable RLS (Row Level Security)
-alter table profiles enable row level security;
-alter table post_grades enable row level security;
-
--- Profiles table
+-- Create tables
 create table profiles (
   id uuid references auth.users on delete cascade primary key,
   email text not null,
@@ -27,7 +31,6 @@ create table profiles (
   updated_at timestamptz default now()
 );
 
--- Post grades table
 create table post_grades (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references profiles(id) on delete cascade,
@@ -56,7 +59,11 @@ create table post_grades (
   created_at timestamptz default now()
 );
 
--- RLS Policies
+-- Enable security
+alter table profiles enable row level security;
+alter table post_grades enable row level security;
+
+-- Add access rules
 create policy "Users can view own profile" on profiles for select using (auth.uid() = id);
 create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
 create policy "Users can view own grades" on post_grades for select using (auth.uid() = user_id);
@@ -64,68 +71,120 @@ create policy "Users can create own grades" on post_grades for insert with check
 create policy "Users can delete own grades" on post_grades for delete using (auth.uid() = user_id);
 ```
 
-4. Go to Settings → API, copy:
-   - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon public` → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `service_role secret` → `SUPABASE_SERVICE_ROLE_KEY`
+- Click **"Run"** (play button)
 
-### 2. DeepSeek API (2 mins)
-1. Go to https://platform.deepseek.com/
-2. Sign up and get API key
-3. Add $5-10 credit (more than enough to start)
+**1.3 Get API Keys**
+- Click **"Settings"** (gear icon, bottom left)
+- Click **"API"** in the menu
+- Copy these values:
 
-### 3. Stripe Setup (10 mins)
+| Field | Value to Copy |
+|-------|--------------|
+| Project URL | `NEXT_PUBLIC_SUPABASE_URL` |
+| anon public | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| service_role secret | `SUPABASE_SERVICE_ROLE_KEY` |
+
+**SAVE THESE - you'll paste them in Vercel later**
+
+---
+
+## Step 2: DeepSeek AI (Cost Savings) - 3 minutes
+
+**2.1 Get API Key**
+- Go to https://platform.deepseek.com
+- Sign up with email/Google
+- Click **"API Keys"** in left sidebar
+- Click **"Create API Key"**
+- Copy the key (starts with `sk-...`)
+
+**This is your `DEEPSEEK_API_KEY`**
+
+---
+
+## Step 3: Stripe (Payments) - OPTIONAL for now
+
+**You can skip this and launch without payments!** The app works with free tier (3 grades/month) without Stripe.
+
+**To add Stripe later:**
 1. Go to https://dashboard.stripe.com
-2. Create a product:
-   - Name: "PostScore Pro"
-   - Price: $19/month
-   - Enable 7-day free trial
-3. Copy the Price ID (starts with `price_`)
-4. Go to Developers → API keys, copy Secret key
-5. Go to Developers → Webhooks → Add endpoint:
-   - URL: `https://YOUR_VERCEL_URL/api/stripe/webhook`
-   - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+2. Create product "PostScore Pro" - $19/month, 7-day trial
+3. Copy Price ID (starts with `price_...`)
+4. Add webhook endpoint pointing to `https://YOUR_URL/api/stripe/webhook`
+5. Copy API keys to Vercel
 
-### 4. Resend (Email) (5 mins)
-1. Go to https://resend.com
-2. Sign up and verify your domain (or use the default resend.dev for testing)
-3. Copy API key
+---
 
-### 5. Vercel Deploy (3 mins)
-1. Go to https://vercel.com/new
-2. Import your GitHub repo (postscore)
-3. Add environment variables:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=...
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-   SUPABASE_SERVICE_ROLE_KEY=...
-   DEEPSEEK_API_KEY=...
-   STRIPE_SECRET_KEY=sk_live_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   STRIPE_PRO_PRICE_ID=price_...
-   RESEND_API_KEY=re_...
-   NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-   ```
-4. Deploy!
+## Step 4: Deploy to Vercel - 5 minutes
 
-### 6. Test (Optional, 5 mins)
-1. Visit your deployed URL
-2. Sign up with email or Google
-3. Grade a test post
-4. Check Stripe test mode for Pro subscription
+**4.1 Connect GitHub**
+- Go to https://vercel.com/new
+- Sign in with GitHub
+- Find and select `postscore` repo
+- Click **"Import"**
 
-## Cost Estimate
+**4.2 Configure Project**
+- Project Name: `postscore` (or whatever you want)
+- Framework Preset: Should auto-detect Next.js
+- Root Directory: `./`
 
-| Service | Monthly Cost (Start) |
-|---------|---------------------|
-| Vercel | Free tier |
+**4.3 Add Environment Variables**
+Click **"Add"** button and enter these:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+DEEPSEEK_API_KEY=sk-...
+NEXT_PUBLIC_APP_URL=https://postscore.vercel.app
+```
+
+*(Skip Stripe variables for now if not set up)*
+
+**4.4 Deploy**
+- Click **"Deploy"**
+- Wait 2-3 minutes for build
+- Click **"Visit"** when ready!
+
+---
+
+## Step 5: Test Your App - 2 minutes
+
+1. **Visit your URL** (e.g., `https://postscore.vercel.app`)
+2. **Sign up** with email
+3. **Grade a post** - paste any LinkedIn post and click "Grade"
+4. **Check the score** displays correctly
+
+---
+
+## You're Live! 🎉
+
+Your app is now running at your Vercel URL.
+
+**Next steps (optional):**
+- Add Stripe for Pro subscriptions
+- Connect custom domain in Vercel settings
+- Add Google OAuth in Supabase (for social login)
+
+## Monthly Costs
+
+| Service | Cost |
+|---------|------|
+| Vercel | Free |
 | Supabase | Free tier |
-| DeepSeek | ~$5-10 (scales with usage) |
-| Stripe | 2.9% + 30¢ per transaction |
-| Resend | Free tier (3,000 emails/month) |
+| DeepSeek AI | ~$5-10 (scales with usage) |
+| **Total** | **~$5-10/month** |
 
-**Total: ~$5-10/month to start**
+---
 
-## Domain (Optional)
-- Vercel gives you `your-project.vercel.app` free
-- Add custom domain later in Vercel settings
+## Troubleshooting
+
+**Error: "relation profiles does not exist"**
+→ You didn't run the SQL in Supabase. Go back to Step 1.2
+
+**Error: "Failed to grade post"**
+→ Check DeepSeek API key is correct and has credit
+
+**Can't sign up**
+→ Check Supabase API keys are correct in Vercel
+
+Need help? Check the code at https://github.com/mohammedimran2901/postscore
